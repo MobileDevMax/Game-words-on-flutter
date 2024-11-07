@@ -1,0 +1,160 @@
+import 'package:flutter/material.dart';
+import 'dart:async';
+import 'dart:math';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: WordGame(),
+    );
+  }
+}
+
+class WordGame extends StatefulWidget {
+  @override
+  _WordGameState createState() => _WordGameState();
+}
+
+class _WordGameState extends State<WordGame> {
+  final TextEditingController controllerPlayer1 = TextEditingController();
+  final TextEditingController controllerPlayer2 = TextEditingController();
+
+  String currentLetter = '';
+  int timerSeconds = 60;
+  bool isPlayer1Turn = true;
+  Timer? timer;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  void generateRandomLetter() {
+    const letters = 'abcdefghijklmnopqrstuvwxyz';
+    setState(() {
+      currentLetter = letters[Random().nextInt(letters.length)];
+    });
+  }
+
+  void startTimer() {
+    timer?.cancel();
+    timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(() {
+        if (timerSeconds > 0) {
+          timerSeconds--;
+        } else {
+          switchTurn();
+        }
+      });
+    });
+  }
+
+  void switchTurn() {
+    if (isPlayer1Turn) {
+      isPlayer1Turn = false;
+    } else {
+      showResults();
+    }
+    timerSeconds = 60; 
+    startTimer(); 
+  }
+
+  void showResults() {
+    int countPlayer1 = controllerPlayer1.text.split(',').length;
+    int countPlayer2 = controllerPlayer2.text.split(',').length;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Results"),
+          content: Text(
+            "Player 1: $countPlayer1\nPlayer 2: $countPlayer2\nWinner: ${countPlayer1 > countPlayer2 ? "Player 1" : "Player 2"}",
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text("Close"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void resetGame() {
+    controllerPlayer1.clear();
+    controllerPlayer2.clear();
+    generateRandomLetter();
+    timerSeconds = 60; 
+  }
+
+  void startNewGame() {
+    resetGame();
+    generateRandomLetter();
+    startTimer(); 
+    setState(() {
+      isPlayer1Turn = true; 
+      timerSeconds = 60; 
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("Game words")),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Text("Letter: $currentLetter", style: TextStyle(fontSize: 24)),
+            Text("Time left: $timerSeconds seconds", style: TextStyle(fontSize: 18)),
+            TextField(
+              controller: controllerPlayer1,
+              onSubmitted: (value) {
+                if (isPlayer1Turn) {
+                }
+              },
+              decoration: InputDecoration(
+                labelText: "Player 1, enter words separated by commas",
+              ),
+              enabled: isPlayer1Turn,
+            ),
+            SizedBox(height: 20),
+            TextField(
+              controller: controllerPlayer2,
+              onSubmitted: (value) {
+                if (!isPlayer1Turn) {
+                }
+              },
+              decoration: InputDecoration(
+                labelText: "Player 2, enter words separated by commas",
+              ),
+              enabled: !isPlayer1Turn,
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: startNewGame,
+              child: Text("Start the game"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    controllerPlayer1.dispose();
+    controllerPlayer2.dispose();
+    super.dispose();
+  }
+}
